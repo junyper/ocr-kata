@@ -6,12 +6,16 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "postinstall": "tsc"
+  },
+  "bin": {
+    "ocr-kata": "dist/cli.js"
   },
   "keywords": [],
   "author": "Jennifer Stern",
   "license": "MIT",
   "devDependencies": {
+    "@types/glob": "^7.1.3",
     "@types/jest": "^26.0.20",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
@@ -38,5 +42,8 @@
     "*.{js,ts}": [
       "eslint --fix"
     ]
+  },
+  "dependencies": {
+    "glob": "^7.1.6"
   }
 }

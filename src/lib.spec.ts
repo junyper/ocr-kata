@@ -3,7 +3,7 @@ import { digitToCharacter, characterToDigit, entryToAccount, entryToCharacters, 
 
 describe('parseAccountNumbers', (): void => {
   test('parses account numbers from a file', async (): Promise<void> => {
-    const numbers = await parseAccountNumbers(resolve(__dirname, './__fixtures__/use_case_one.txt'));
+    const numbers = await parseAccountNumbers(resolve(__dirname, './__fixtures__/use_case_one.data'));
     expect(numbers).toStrictEqual([
       '000000000',
       '111111111',

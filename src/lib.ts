@@ -1,4 +1,4 @@
-import { createReadStream } from 'fs';
+import { createReadStream, createWriteStream } from 'fs';
 import { createInterface } from 'readline';
 
 import { Digit } from './types';
@@ -59,40 +59,64 @@ export const entryToAccount = (entry: string[]): string => {
     .join('');
 };
 
-export const parseAccountNumbers = async (filepath: string): Promise<string[]> => {
-  const entries: string[][] = [];
-  const rl = createInterface({
-    input: createReadStream(filepath),
-    output: process.stdout,
-  });
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const parseAccountNumbers = async (filePath: string, onProgress = (_: string) => {}): Promise<string[]> => {
+  const accountNumbers: string[] = [];
+
+  const readStream = createInterface({ input: createReadStream(filePath) });
+  const writeStream = createWriteStream(`${filePath}.out`);
 
   let entry: string[] = [];
   let lines = 1;
 
+  const writeAccountNumber = (entry: string[]): void => {
+    const accountNumber = entryToAccount(entry);
+    onProgress(accountNumber);
+    accountNumbers.push(accountNumber);
+    writeStream.write(accountNumber + '\n');
+  };
+
   return new Promise((resolve, reject) => {
-    rl.on('line', (line: string) => {
-      if (entry.length === CHARACTER_HEIGHT) {
-        entries.push(entry);
-        entry = [];
-      }
+    writeStream.on('open', () => {
+      readStream.on('line', (line: string) => {
+        if (entry.length === CHARACTER_HEIGHT) {
+          try {
+            writeAccountNumber(entry);
+          } catch (e) {
+            reject(e);
+          }
+          entry = [];
+        }
 
-      if (lines % (CHARACTER_HEIGHT + 1) !== 0) {
-        entry.push(line);
-      }
+        if (lines % (CHARACTER_HEIGHT + 1) !== 0) {
+          entry.push(line);
+        }
 
-      lines++;
+        lines++;
+      });
+
+      readStream.on('close', () => {
+        if (entry.length === CHARACTER_HEIGHT) {
+          try {
+            writeAccountNumber(entry);
+          } catch (e) {
+            reject(e);
+          }
+        }
+        writeStream.end();
+        resolve(accountNumbers);
+      });
+
+      readStream.on('error', (e) => {
+        readStream.close();
+        reject(e);
+      });
     });
 
-    rl.on('close', () => {
-      if (entry.length === CHARACTER_HEIGHT) {
-        entries.push(entry);
-      }
-
-      try {
-        resolve(entries.map((entry: string[]): string => entryToAccount(entry)));
-      } catch (e) {
-        reject(e);
-      }
+    writeStream.on('error', (e) => {
+      writeStream.end();
+      writeStream.close();
+      reject(e);
     });
   });
 };
