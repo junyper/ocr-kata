@@ -16,7 +16,7 @@ glob(join(sourceDir, sep, '*.data'), (err, files) => {
     process.exit(1);
   }
   if (files.length === 0) {
-    console.log(`No account number *.data files found.`);
+    console.log(`🔴 No account number *.data files found.`);
   }
   files.forEach((sourceFilePath: string) => {
     console.log(`⏳ Parsing ${sourceFilePath}...`);
@@ -26,6 +26,7 @@ glob(join(sourceDir, sep, '*.data'), (err, files) => {
     })
       .then((accountNumbers) => {
         console.log(`✅ Parsed ${accountNumbers.length} account numbers from ${basename(sourceFilePath)}.`);
+        console.log(`Generated output file in ${destinationDir}.`);
       })
       .catch((err) => {
         console.error(`🔴 ${err}`);
