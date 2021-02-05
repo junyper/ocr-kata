@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "postinstall": "tsc"
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "bin": {
     "ocr-kata": "dist/cli.js"
