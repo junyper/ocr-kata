@@ -2,12 +2,9 @@ import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 
 import { Digit } from './types';
-import { CHARACTERS, ACCOUNT_NUMBER_LENGTH, CHARACTER_WIDTH, CHARACTER_HEIGHT } from './constants';
+import { VALID_CHARACTERS, ACCOUNT_NUMBER_LENGTH, CHARACTER_WIDTH, CHARACTER_HEIGHT } from './constants';
 
 export const validateEntry = (entry: string[]): string[] => {
-  if (!entry) {
-    throw new Error(`Undefined account number entry.`);
-  }
   if (entry.length !== CHARACTER_HEIGHT) {
     throw new Error(`
       Invalid account number entry.
@@ -26,11 +23,8 @@ export const validateEntry = (entry: string[]): string[] => {
 };
 
 export const validateCharacter = (character: string[]): string[] => {
-  if (!character) {
-    throw new Error(`Undefined character.`);
-  }
   if (character.length !== CHARACTER_HEIGHT) {
-    throw new Error(`Invalid character. Characters must me ${CHARACTER_HEIGHT} lines.`);
+    throw new Error(`Invalid character. Characters must be ${CHARACTER_HEIGHT} lines, not ${character.length}.`);
   }
   character.forEach((row: string, index: number) => {
     if (row.length !== CHARACTER_WIDTH) {
@@ -44,18 +38,24 @@ export const validateCharacter = (character: string[]): string[] => {
 };
 
 export const entryToCharacters = (entry: string[]): string[][] => {
-  const rows = entry.map((row: string): string[] => <string[]>row.match(new RegExp(`.{1,${CHARACTER_WIDTH}}`, 'g')));
+  const rows = validateEntry(entry).map(
+    (row: string): string[] => <string[]>row.match(new RegExp(`.{1,${CHARACTER_WIDTH}}`, 'g')),
+  );
 
   return <string[][]>new Array(ACCOUNT_NUMBER_LENGTH).fill([]).map((_) => rows.map((row) => row.shift()));
 };
 
+export const digitToCharacter = (digit: number): string[] => {
+  return [...(VALID_CHARACTERS[digit] || [])];
+};
+
 export const characterToDigit = (character: string[]): Digit => {
-  return <Digit>CHARACTERS.findIndex((c: string[]) => c.join(',') === character.join(','));
+  return <Digit>VALID_CHARACTERS.findIndex((c: string[]) => c.join(',') === validateCharacter(character).join(','));
 };
 
 export const entryToAccount = (entry: string[]): string => {
-  return entryToCharacters(validateEntry(entry))
-    .map((character) => characterToDigit(validateCharacter(character)))
+  return entryToCharacters(entry)
+    .map((character) => characterToDigit(character))
     .join('');
 };
 

@@ -1,16 +1,22 @@
 {
-  "env": {
-    "es2021": true
-  },
+  "parser": "@typescript-eslint/parser",
   "extends": [
-    "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
+    "prettier/@typescript-eslint",
     "plugin:prettier/recommended"
   ],
-  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
   "plugins": [
-    "@typescript-eslint",
-    "prettier"
+    "prettier",
+    "@typescript-eslint"
   ],
-  "rules": {}
+  "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "ignoreRestSiblings": true, "argsIgnorePattern": "^_" }
+    ]
+  }
 }
