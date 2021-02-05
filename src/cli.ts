@@ -1,31 +1,34 @@
 #!/usr/bin/env node
 
-import { resolve } from 'path';
+import { join, sep, basename } from 'path';
 import glob from 'glob';
 
 import { parseAccountNumbers } from './lib';
+import { AccountNumberStatus } from './types';
 
 const args = process.argv.slice(2);
-const dir = args[0] || '*.data';
+const sourceDir = args[0] || '.';
+const destinationDir = args[1] || sourceDir;
 
-glob(resolve(dir, '*.data'), (err, files) => {
+glob(join(sourceDir, sep, '*.data'), (err, files) => {
   if (err) {
-    console.error(err);
+    console.error(`🔴 ${err}`);
     process.exit(1);
   }
   if (files.length === 0) {
-    console.log(`No account number .data files found.`);
+    console.log(`No account number *.data files found.`);
   }
-  files.forEach((file: string) => {
-    console.log(`Parsing ${file}...`);
-    parseAccountNumbers(file, (number) => console.log(number))
+  files.forEach((sourceFilePath: string) => {
+    console.log(`⏳ Parsing ${sourceFilePath}...`);
+
+    parseAccountNumbers(sourceFilePath, destinationDir, (number: string, status: AccountNumberStatus) => {
+      console.log(number, status);
+    })
       .then((accountNumbers) => {
-        console.log(`Parsed ${accountNumbers.length} account numbers.`);
-        process.exit(0);
+        console.log(`✅ Parsed ${accountNumbers.length} account numbers from ${basename(sourceFilePath)}.`);
       })
       .catch((err) => {
-        console.error(err);
-        process.exit(1);
+        console.error(`🔴 ${err}`);
       });
   });
 });

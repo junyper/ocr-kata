@@ -1,8 +1,28 @@
 import { createReadStream, createWriteStream } from 'fs';
+import { join, basename } from 'path';
 import { createInterface } from 'readline';
 
-import { Digit } from './types';
+import { Digit, AccountNumberStatus } from './types';
 import { VALID_CHARACTERS, ACCOUNT_NUMBER_LENGTH, CHARACTER_WIDTH, CHARACTER_HEIGHT } from './constants';
+
+export const getAccountStatus = (accountNumber: string): AccountNumberStatus => {
+  const chars = Array.from(accountNumber);
+  let checkSum = 0;
+
+  for (let i = 1; i <= chars.length; i++) {
+    const char = `${chars[chars.length - i]}`;
+
+    if (char === '?') {
+      return 'ILL';
+    }
+
+    checkSum = checkSum + parseInt(char) * i;
+  }
+
+  checkSum = checkSum % 11;
+
+  return checkSum === 0 ? 'VALID' : 'ERR';
+};
 
 export const validateEntry = (entry: string[]): string[] => {
   if (entry.length !== CHARACTER_HEIGHT) {
@@ -50,7 +70,8 @@ export const digitToCharacter = (digit: number): string[] => {
 };
 
 export const characterToDigit = (character: string[]): Digit => {
-  return <Digit>VALID_CHARACTERS.findIndex((c: string[]) => c.join(',') === validateCharacter(character).join(','));
+  const index = VALID_CHARACTERS.findIndex((c: string[]) => c.join(',') === validateCharacter(character).join(','));
+  return index >= 0 ? <Digit>index : '?';
 };
 
 export const entryToAccount = (entry: string[]): string => {
@@ -59,24 +80,29 @@ export const entryToAccount = (entry: string[]): string => {
     .join('');
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const parseAccountNumbers = async (filePath: string, onProgress = (_: string) => {}): Promise<string[]> => {
-  const accountNumbers: string[] = [];
-
-  const readStream = createInterface({ input: createReadStream(filePath) });
-  const writeStream = createWriteStream(`${filePath}.out`);
-
-  let entry: string[] = [];
-  let lines = 1;
-
-  const writeAccountNumber = (entry: string[]): void => {
-    const accountNumber = entryToAccount(entry);
-    onProgress(accountNumber);
-    accountNumbers.push(accountNumber);
-    writeStream.write(accountNumber + '\n');
-  };
+export const parseAccountNumbers = async (
+  sourceFilePath: string,
+  destinationDir: string,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onProgress = (_accountNumber: string, _status: AccountNumberStatus) => {},
+): Promise<string[][]> => {
+  const readStream = createInterface({ input: createReadStream(sourceFilePath) });
+  const writeStream = createWriteStream(join(destinationDir, `${basename(sourceFilePath, '.data')}.out`));
 
   return new Promise((resolve, reject) => {
+    const accountNumbers: string[][] = [];
+    let entry: string[] = [];
+    let lines = 1;
+
+    const writeAccountNumber = (entry: string[]): void => {
+      const accountNumber = entryToAccount(entry);
+      const status: AccountNumberStatus = getAccountStatus(accountNumber);
+
+      onProgress(accountNumber, status);
+      accountNumbers.push([accountNumber, status]);
+      writeStream.write(`${accountNumber}${status !== 'VALID' ? ` ${status}` : ''}\n`);
+    };
+
     writeStream.on('open', () => {
       readStream.on('line', (line: string) => {
         if (entry.length === CHARACTER_HEIGHT) {

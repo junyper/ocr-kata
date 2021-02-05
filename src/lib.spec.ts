@@ -1,27 +1,60 @@
-import { resolve } from 'path';
-import { digitToCharacter, characterToDigit, entryToAccount, entryToCharacters, parseAccountNumbers } from './lib';
+import { join } from 'path';
+import {
+  getAccountStatus,
+  digitToCharacter,
+  characterToDigit,
+  entryToAccount,
+  entryToCharacters,
+  parseAccountNumbers,
+} from './lib';
 
-describe('parseAccountNumbers', (): void => {
+describe('parseAccountNumbers', () => {
   test('parses account numbers from a file', async (): Promise<void> => {
-    const numbers = await parseAccountNumbers(resolve(__dirname, './__fixtures__/use_case_one.data'));
+    const numbers = await parseAccountNumbers(
+      join(__dirname, './__fixtures__/use_case_one.data'),
+      join(__dirname, './__fixtures__'),
+    );
     expect(numbers).toStrictEqual([
-      '000000000',
-      '111111111',
-      '222222222',
-      '333333333',
-      '444444444',
-      '555555555',
-      '666666666',
-      '777777777',
-      '888888888',
-      '999999999',
-      '123456789',
+      ['000000000', 'VALID'],
+      ['111111111', 'ERR'],
+      ['222222222', 'ERR'],
+      ['333333333', 'ERR'],
+      ['444444444', 'ERR'],
+      ['555555555', 'ERR'],
+      ['666666666', 'ERR'],
+      ['777777777', 'ERR'],
+      ['888888888', 'ERR'],
+      ['999999999', 'ERR'],
+      ['123456789', 'VALID'],
+    ]);
+  });
+  test('parses illegal account numbers from a file', async (): Promise<void> => {
+    const numbers = await parseAccountNumbers(
+      join(__dirname, './__fixtures__/use_case_three.data'),
+      join(__dirname, './__fixtures__'),
+    );
+    expect(numbers).toStrictEqual([
+      ['000000051', 'VALID'],
+      ['49006771?', 'ILL'],
+      ['1234?678?', 'ILL'],
     ]);
   });
 });
 
-describe('entryToCharacters', (): void => {
-  test('parses zeros', (): void => {
+describe('getAccountStatus', () => {
+  test('returns VALID if valid', () => {
+    expect(getAccountStatus('457508000')).toBe('VALID');
+  });
+  test('returns ERR if not valid', () => {
+    expect(getAccountStatus('664371495')).toBe('ERR');
+  });
+  test('returns ILL if some chars are not valid', () => {
+    expect(getAccountStatus('86110??36')).toBe('ILL');
+  });
+});
+
+describe('entryToCharacters', () => {
+  test('parses zeros', () => {
     expect(
       entryToCharacters([
         /* eslint-disable */
@@ -32,7 +65,7 @@ describe('entryToCharacters', (): void => {
       ]),
     ).toStrictEqual(new Array(9).fill(digitToCharacter(0)));
   });
-  test('throws an error for invalid entry width', (): void => {
+  test('throws an error for invalid entry width', () => {
     expect(() => {
       entryToCharacters([
         /* eslint-disable */
@@ -43,7 +76,7 @@ describe('entryToCharacters', (): void => {
       ]);
     }).toThrow();
   });
-  test('throws an error for invalid entry height', (): void => {
+  test('throws an error for invalid entry height', () => {
     expect(() => {
       entryToCharacters([
         /* eslint-disable */
@@ -55,21 +88,21 @@ describe('entryToCharacters', (): void => {
   });
 });
 
-describe('characterToDigit', (): void => {
-  test('throws an error for a character with the wrong height', (): void => {
+describe('characterToDigit', () => {
+  test('throws an error for a character with the wrong height', () => {
     expect(() => {
       characterToDigit(['---', '---']);
     }).toThrow();
   });
-  test('throws an error for a character with the wrong width', (): void => {
+  test('throws an error for a character with the wrong width', () => {
     expect(() => {
       characterToDigit(['--', '--', '--']);
     }).toThrow();
   });
 });
 
-describe('entryToAccount', (): void => {
-  test('parses a sequence', (): void => {
+describe('entryToAccount', () => {
+  test('parses a sequence', () => {
     expect(
       entryToAccount([
         /* eslint-disable */
@@ -80,7 +113,7 @@ describe('entryToAccount', (): void => {
       ]),
     ).toBe('123456789');
   });
-  test('throws an error for invalid entry width', (): void => {
+  test('throws an error for invalid entry width', () => {
     expect(() => {
       entryToAccount([
         /* eslint-disable */
@@ -91,7 +124,7 @@ describe('entryToAccount', (): void => {
       ]);
     }).toThrow();
   });
-  test('throws an error for invalid entry height', (): void => {
+  test('throws an error for invalid entry height', () => {
     expect(() => {
       entryToAccount([
         /* eslint-disable */
