@@ -1,4 +1,5 @@
 import { join } from 'path';
+import waitForExpect from 'wait-for-expect';
 import {
   getAccountStatus,
   digitToCharacter,
@@ -10,40 +11,55 @@ import {
 
 describe('parseAccountNumbers', () => {
   test('parses account numbers from a file', async (): Promise<void> => {
-    const numbers = await parseAccountNumbers(
+    const handleComplete = jest.fn();
+    const handleAccountNumberParsed = jest.fn();
+    parseAccountNumbers(
       join(__dirname, './__fixtures__/use_case_one.data'),
       join(__dirname, './__fixtures__'),
+      handleAccountNumberParsed,
+      handleComplete,
     );
-    expect(numbers).toStrictEqual([
-      ['000000000', 'VALID'],
-      ['111111111', 'ERR'],
-      ['222222222', 'ERR'],
-      ['333333333', 'ERR'],
-      ['444444444', 'ERR'],
-      ['555555555', 'ERR'],
-      ['666666666', 'ERR'],
-      ['777777777', 'ERR'],
-      ['888888888', 'ERR'],
-      ['999999999', 'ERR'],
-      ['123456789', 'VALID'],
-    ]);
+
+    await waitForExpect(() => {
+      expect(handleAccountNumberParsed).toHaveBeenCalledTimes(11);
+      expect(handleAccountNumberParsed).toHaveBeenNthCalledWith(1, '000000000');
+      expect(handleAccountNumberParsed).toHaveBeenNthCalledWith(2, '111111111 ERR');
+      expect(handleComplete).toHaveBeenCalledWith([
+        '000000000',
+        '111111111 ERR',
+        '222222222 ERR',
+        '333333333 ERR',
+        '444444444 ERR',
+        '555555555 ERR',
+        '666666666 ERR',
+        '777777777 ERR',
+        '888888888 ERR',
+        '999999999 ERR',
+        '123456789',
+      ]);
+    });
   });
   test('parses illegal account numbers from a file', async (): Promise<void> => {
-    const numbers = await parseAccountNumbers(
+    const handleComplete = jest.fn();
+    const handleAccountNumberParsed = jest.fn();
+    parseAccountNumbers(
       join(__dirname, './__fixtures__/use_case_three.data'),
       join(__dirname, './__fixtures__'),
+      handleAccountNumberParsed,
+      handleComplete,
     );
-    expect(numbers).toStrictEqual([
-      ['000000051', 'VALID'],
-      ['49006771?', 'ILL'],
-      ['1234?678?', 'ILL'],
-    ]);
+    await waitForExpect(() => {
+      expect(handleAccountNumberParsed).toHaveBeenCalledTimes(3);
+      expect(handleAccountNumberParsed).toHaveBeenNthCalledWith(1, '000000051');
+      expect(handleAccountNumberParsed).toHaveBeenNthCalledWith(2, '49006771? ILL');
+      expect(handleComplete).toHaveBeenCalledWith(['000000051', '49006771? ILL', '1234?678? ILL']);
+    });
   });
 });
 
 describe('getAccountStatus', () => {
-  test('returns VALID if valid', () => {
-    expect(getAccountStatus('457508000')).toBe('VALID');
+  test('returns "" if valid', () => {
+    expect(getAccountStatus('457508000')).toBe('');
   });
   test('returns ERR if not valid', () => {
     expect(getAccountStatus('664371495')).toBe('ERR');

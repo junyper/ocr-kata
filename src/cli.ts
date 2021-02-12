@@ -4,7 +4,6 @@ import { join, sep, basename } from 'path';
 import glob from 'glob';
 
 import { parseAccountNumbers } from './lib';
-import { AccountNumberStatus } from './types';
 
 const args = process.argv.slice(2);
 const sourceDir = args[0] || '.';
@@ -21,15 +20,20 @@ glob(join(sourceDir, sep, '*.data'), (err, files) => {
   files.forEach((sourceFilePath: string) => {
     console.log(`⏳ Parsing ${sourceFilePath}...`);
 
-    parseAccountNumbers(sourceFilePath, destinationDir, (number: string, status: AccountNumberStatus) => {
-      console.log(number, status);
-    })
-      .then((accountNumbers) => {
-        console.log(`✅ Parsed ${accountNumbers.length} account numbers from ${basename(sourceFilePath)}.`);
-        console.log(`Generated output file in ${destinationDir}.`);
-      })
-      .catch((err) => {
-        console.error(`🔴 ${err}`);
-      });
+    const handleAccountNumberParsed = (number: string) => {
+      console.log(number);
+    };
+
+    const handleComplete = (accountNumbers: string[]) => {
+      console.log(`✅ Parsed ${accountNumbers.length} account numbers from ${basename(sourceFilePath)}.`);
+      console.log(`Generated output file in ${destinationDir}.`);
+    };
+
+    try {
+      parseAccountNumbers(sourceFilePath, destinationDir, handleAccountNumberParsed, handleComplete);
+    } catch (e) {
+      console.error(`🔴 ${e}`);
+      process.exit(1);
+    }
   });
 });
