@@ -149,9 +149,9 @@ export const parseAccountNumbers = (
     ]
   */
   const parseEntry = (entry: string[]) => {
-    const accountNumber = entryToAccount(entry);
-    const status: AccountNumberStatus = getAccountStatus(accountNumber);
-    const result = [accountNumber, status].join(' ').trim();
+    const accountNumber = entryToAccount(entry); // e.g. '000000000'
+    const status: AccountNumberStatus = getAccountStatus(accountNumber); // e.g. 'ERR'
+    const result = [accountNumber, status].join(' ').trim(); // e.g. '000000000 ERR'
 
     onAccountNumberParsed(result);
     accountNumbers.push(result);
